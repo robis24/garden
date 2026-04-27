@@ -289,5 +289,14 @@
     "size": "m",
     "id": "5837c297-07c1-4eb4-9602-8a7bc1eb6f1d",
     "createdAt": 1777286948953
+  },
+  {
+    "id": "6d7f4b8e-6c6e-4c1c-9f2e-1e9c2a7b5d44",
+    "title": "hulst",
+    "category": "perennial",
+    "shape": "circle",
+    "size": "l",
+    "x": 3259,
+    "y": -5291
   }
 ]
