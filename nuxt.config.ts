@@ -4,11 +4,11 @@ export default defineNuxtConfig({
   devtools: { enabled: true },
   css: ['~/assets/styles/main.scss'],
   runtimeConfig: {
-    GITHUB_TOKEN: '',
-    GITHUB_OWNER: '',
-    GITHUB_REPO: 'garden',
-    GITHUB_BRANCH: 'main',
-    GARDEN_API_KEY: ''
+    GITHUB_TOKEN: process.env.GITHUB_TOKEN || '',
+    GITHUB_OWNER: process.env.GITHUB_OWNER || '',
+    GITHUB_REPO: process.env.GITHUB_REPO || 'garden',
+    GITHUB_BRANCH: process.env.GITHUB_BRANCH || 'main',
+    GARDEN_API_KEY: process.env.GARDEN_API_KEY || ''
   },
   nitro: {
     storage: {
