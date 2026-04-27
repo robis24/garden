@@ -19,24 +19,44 @@ let dragItemStartX = 0, dragItemStartY = 0
 let dragMouseStartX = 0, dragMouseStartY = 0
 let dragHasMoved = false
 
-function onMarkerMouseDown(e: MouseEvent, el: GardenElement) {
-  if (e.button !== 0) return
+// ── Marker drag — unified pointer events (mouse + touch) ─────────────────────
+function onMarkerPointerDown(e: PointerEvent, el: GardenElement) {
+  if (e.button > 0) return
   e.stopPropagation()
+  ;(e.currentTarget as SVGGElement).setPointerCapture(e.pointerId)
   draggedId.value = el.id
   const { x, y } = screenToSVG(e.clientX, e.clientY)
-  dragMouseStartX = x
-  dragMouseStartY = y
-  dragItemStartX = el.x
-  dragItemStartY = el.y
-  dragHasMoved = false
-  isDragging.value = true
+  dragMouseStartX = x;  dragMouseStartY = y
+  dragItemStartX  = el.x; dragItemStartY = el.y
+  dragHasMoved    = false
 }
 
-function onMarkerClick(e: MouseEvent, el: GardenElement) {
-  e.stopPropagation()
+function onMarkerPointerMove(e: PointerEvent) {
+  if (!draggedId.value) return
+  const { x, y } = screenToSVG(e.clientX, e.clientY)
+  const dx = x - dragMouseStartX
+  const dy = y - dragMouseStartY
+  if (Math.hypot(dx, dy) > 8) dragHasMoved = true
+  const el = elements.value.find(i => i.id === draggedId.value)
+  if (el) { el.x = dragItemStartX + dx; el.y = dragItemStartY + dy }
+}
+
+async function onMarkerPointerUp(e: PointerEvent, el: GardenElement) {
+  if (draggedId.value !== el.id) return
+  ;(e.currentTarget as SVGGElement).releasePointerCapture(e.pointerId)
   if (!dragHasMoved) {
     addDialogRef.value?.open(el.x, el.y, el)
+  } else {
+    await store.updateElement(el.id, { x: el.x, y: el.y })
   }
+  draggedId.value = null
+}
+
+function onMarkerPointerCancel(e: PointerEvent, el: GardenElement) {
+  if (draggedId.value !== el.id) return
+  // Revert to pre-drag position
+  el.x = dragItemStartX; el.y = dragItemStartY
+  draggedId.value = null; dragHasMoved = false
 }
 
 // ── Pan / zoom state ──────────────────────────────────────────────────────────
@@ -68,22 +88,7 @@ function onMouseDown(e: MouseEvent) {
 }
 
 function onMouseMove(e: MouseEvent) {
-  if (!isDragging.value) return
-  
-  if (draggedId.value) {
-    const { x, y } = screenToSVG(e.clientX, e.clientY)
-    const dx = x - dragMouseStartX
-    const dy = y - dragMouseStartY
-    if (Math.hypot(dx, dy) > 2) dragHasMoved = true
-    
-    const el = elements.value.find(i => i.id === draggedId.value)
-    if (el) {
-      el.x = dragItemStartX + dx
-      el.y = dragItemStartY + dy
-    }
-    return
-  }
-
+  if (!isDragging.value || draggedId.value) return  // marker drag handled by pointer events
   const dx = e.clientX - dragStartX
   const dy = e.clientY - dragStartY
   const r  = rotation.value * Math.PI / 180
@@ -91,16 +96,7 @@ function onMouseMove(e: MouseEvent) {
   panY.value = dragStartPanY - dx * Math.sin(r) + dy * Math.cos(r)
 }
 
-async function onMouseUp() {
-  if (draggedId.value) {
-    const el = elements.value.find(i => i.id === draggedId.value)
-    if (el && dragHasMoved) {
-      await store.updateElement(el.id, { x: el.x, y: el.y })
-    }
-    draggedId.value = null
-  }
-  isDragging.value = false
-}
+function onMouseUp() { isDragging.value = false }
 
 // ── Wheel zoom (centred on cursor) ────────────────────────────────────────────
 function onWheel(e: WheelEvent) {
@@ -300,8 +296,11 @@ function diamondPoints(cx: number, cy: number, r: number) {
                 { 'garden-map__marker-group--dragging': draggedId === el.id },
                 `garden-map__marker-group--${el.category || 'perennial'}`
               ]"
-              @mousedown="onMarkerMouseDown($event, el)"
-              @click="onMarkerClick($event, el)"
+              @pointerdown.stop="onMarkerPointerDown($event, el)"
+              @pointermove.stop="onMarkerPointerMove"
+              @pointerup.stop="onMarkerPointerUp($event, el)"
+              @pointercancel.stop="onMarkerPointerCancel($event, el)"
+              @touchstart.stop.passive="() => {}"
             >
               <circle
                 v-if="el.shape === 'circle'"
@@ -434,6 +433,7 @@ function diamondPoints(cx: number, cy: number, r: number) {
   &__marker-group {
     pointer-events: all;
     cursor: grab;
+    touch-action: none;
     transition: opacity 150ms ease;
 
     &:active { cursor: grabbing; }

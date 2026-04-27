@@ -125,71 +125,75 @@ defineExpose({ open })
     <form class="add-plant-dialog__form" @submit.prevent="onSubmit">
       <h2 class="add-plant-dialog__title">{{ editingId ? 'Edit' : 'Add to map' }}</h2>
 
-      <!-- Title -->
-      <div class="add-plant-dialog__field">
-        <label class="add-plant-dialog__label" for="apd-title">Title *</label>
-        <input
-          id="apd-title"
-          v-model="title"
-          class="add-plant-dialog__input"
-          :aria-invalid="titleError || undefined"
-          type="text"
-          placeholder="e.g. Comfrey patch"
-          autocomplete="off"
-          @input="titleError = false"
-          :disabled="isSubmitting"
-        />
-        <span v-if="titleError" class="add-plant-dialog__error">Title is required</span>
-      </div>
+      <!-- Scrollable fields -->
+      <div class="add-plant-dialog__body">
+        <!-- Title -->
+        <div class="add-plant-dialog__field">
+          <label class="add-plant-dialog__label" for="apd-title">Title *</label>
+          <input
+            id="apd-title"
+            v-model="title"
+            class="add-plant-dialog__input"
+            :aria-invalid="titleError || undefined"
+            type="text"
+            placeholder="e.g. Comfrey patch"
+            autocomplete="off"
+            @input="titleError = false"
+            :disabled="isSubmitting"
+          />
+          <span v-if="titleError" class="add-plant-dialog__error">Title is required</span>
+        </div>
 
-      <!-- Category -->
-      <div class="add-plant-dialog__field">
-        <label class="add-plant-dialog__label" for="apd-category">Category</label>
-        <select id="apd-category" v-model="category" class="add-plant-dialog__select" :disabled="isSubmitting">
-          <option v-for="cat in CATEGORIES" :key="cat.value" :value="cat.value">
-            {{ cat.label }}
-          </option>
-        </select>
-      </div>
+        <!-- Category -->
+        <div class="add-plant-dialog__field">
+          <label class="add-plant-dialog__label" for="apd-category">Category</label>
+          <select id="apd-category" v-model="category" class="add-plant-dialog__select" :disabled="isSubmitting">
+            <option v-for="cat in CATEGORIES" :key="cat.value" :value="cat.value">
+              {{ cat.label }}
+            </option>
+          </select>
+        </div>
 
-      <!-- Shape -->
-      <div class="add-plant-dialog__field">
-        <span class="add-plant-dialog__label">Shape</span>
-        <div class="add-plant-dialog__shapes">
-          <label
-            v-for="s in SHAPES"
-            :key="s.value"
-            class="add-plant-dialog__shape"
-            :class="{ 'add-plant-dialog__shape--active': shape === s.value }"
-          >
-            <input type="radio" v-model="shape" :value="s.value" />
-            <span class="add-plant-dialog__shape-icon">{{ s.icon }}</span>
-            <span class="add-plant-dialog__shape-name">{{ s.label }}</span>
-          </label>
+        <!-- Shape -->
+        <div class="add-plant-dialog__field">
+          <span class="add-plant-dialog__label">Shape</span>
+          <div class="add-plant-dialog__shapes">
+            <label
+              v-for="s in SHAPES"
+              :key="s.value"
+              class="add-plant-dialog__shape"
+              :class="{ 'add-plant-dialog__shape--active': shape === s.value }"
+            >
+              <input type="radio" v-model="shape" :value="s.value" />
+              <span class="add-plant-dialog__shape-icon">{{ s.icon }}</span>
+              <span class="add-plant-dialog__shape-name">{{ s.label }}</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Size -->
+        <div class="add-plant-dialog__field">
+          <label class="add-plant-dialog__label" for="apd-size">Size</label>
+          <select id="apd-size" v-model="size" class="add-plant-dialog__select" :disabled="isSubmitting">
+            <option value="xs">XS — tiny herb</option>
+            <option value="s">S — small shrub</option>
+            <option value="m">M — medium</option>
+            <option value="l">L — large tree</option>
+            <option value="xl">XL — canopy</option>
+          </select>
+        </div>
+
+        <!-- Description (optional markdown) -->
+        <div class="add-plant-dialog__field">
+          <span class="add-plant-dialog__label">
+            Description
+            <span class="add-plant-dialog__optional">optional · markdown</span>
+          </span>
+          <MarkdownEditor v-model="description" />
         </div>
       </div>
 
-      <!-- Size -->
-      <div class="add-plant-dialog__field">
-        <label class="add-plant-dialog__label" for="apd-size">Size</label>
-        <select id="apd-size" v-model="size" class="add-plant-dialog__select" :disabled="isSubmitting">
-          <option value="xs">XS — tiny herb</option>
-          <option value="s">S — small shrub</option>
-          <option value="m">M — medium</option>
-          <option value="l">L — large tree</option>
-          <option value="xl">XL — canopy</option>
-        </select>
-      </div>
-
-      <!-- Description (optional markdown) -->
-      <div class="add-plant-dialog__field">
-        <span class="add-plant-dialog__label">
-          Description
-          <span class="add-plant-dialog__optional">optional · markdown</span>
-        </span>
-        <MarkdownEditor v-model="description" />
-      </div>
-
+      <!-- Sticky action bar — always visible above keyboard -->
       <div class="add-plant-dialog__actions">
         <button
           v-if="editingId"
@@ -223,32 +227,65 @@ defineExpose({ open })
 
 <style lang="scss" scoped>
 .add-plant-dialog {
+  /* Desktop: centered, max 520px */
   width: min(92vw, 520px);
   max-height: 90dvh;
-  overflow-y: auto;
-  overscroll-behavior: contain;
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
-  padding: var(--spacing-lg);
+  padding: 0;
   color: var(--color-text);
   outline: none;
+  overflow: hidden;  /* form controls scroll, not the dialog */
 
   &::backdrop {
     background: rgba(0, 0, 0, 0.7);
     backdrop-filter: blur(4px);
   }
 
+  /* Mobile: full-width bottom sheet */
+  @media (max-width: 540px) {
+    position: fixed;
+    inset: auto 0 0;
+    width: 100%;
+    max-width: 100%;
+    max-height: 92dvh;
+    margin: 0;
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    border-bottom: none;
+    /* Slide up from bottom feel */
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
   &__title {
     font-size: var(--font-size-lg);
     font-weight: 600;
-    margin: 0 0 var(--spacing-lg);
+    margin: 0;
+    padding: var(--spacing-lg) var(--spacing-lg) 0;
+    flex-shrink: 0;
   }
 
   &__form {
     display: flex;
     flex-direction: column;
+    height: 100%;
+    max-height: 90dvh;
+
+    @media (max-width: 540px) {
+      max-height: 92dvh;
+    }
+  }
+
+  /* Scrollable fields area */
+  &__body {
+    flex: 1;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    display: flex;
+    flex-direction: column;
     gap: var(--spacing-md);
+    padding: var(--spacing-md) var(--spacing-lg) var(--spacing-lg);
   }
 
   &__field {
@@ -353,7 +390,10 @@ defineExpose({ open })
     display: flex;
     align-items: center;
     gap: var(--spacing-sm);
-    padding-top: var(--spacing-sm);
+    padding: var(--spacing-sm) var(--spacing-lg) var(--spacing-md);
+    border-top: 1px solid var(--color-border);
+    background: var(--color-surface);
+    flex-shrink: 0;
   }
 
   &__btn {

@@ -2,7 +2,22 @@
 const props = defineProps<{ modelValue: string }>()
 const emit = defineEmits<{ 'update:modelValue': [value: string] }>()
 
-const activeTab = ref<'write' | 'preview'>('write')
+const activeTab   = ref<'write' | 'preview'>('write')
+const isFullscreen = ref(false)
+
+function toggleFullscreen() { isFullscreen.value = !isFullscreen.value }
+
+// Close fullscreen on Escape
+onMounted(() => {
+  function onKey(e: KeyboardEvent) {
+    if (e.key === 'Escape' && isFullscreen.value) {
+      isFullscreen.value = false
+      e.stopPropagation()
+    }
+  }
+  document.addEventListener('keydown', onKey, { capture: true })
+  onUnmounted(() => document.removeEventListener('keydown', onKey, { capture: true }))
+})
 
 const rendered = computed(() => parseMarkdown(props.modelValue))
 
@@ -48,22 +63,34 @@ function parseMarkdown(raw: string): string {
 </script>
 
 <template>
-  <div class="markdown-editor">
+  <div class="markdown-editor" :class="{ 'markdown-editor--fullscreen': isFullscreen }">
     <div class="markdown-editor__tabs" role="tablist">
       <button
         class="markdown-editor__tab"
         :class="{ 'markdown-editor__tab--active': activeTab === 'write' }"
-        type="button"
-        role="tab"
+        type="button" role="tab"
         @click="activeTab = 'write'"
       >Write</button>
       <button
         class="markdown-editor__tab"
         :class="{ 'markdown-editor__tab--active': activeTab === 'preview' }"
-        type="button"
-        role="tab"
+        type="button" role="tab"
         @click="activeTab = 'preview'"
       >Preview</button>
+      <button
+        class="markdown-editor__fullscreen-btn"
+        type="button"
+        :title="isFullscreen ? 'Exit fullscreen' : 'Fullscreen'"
+        :aria-label="isFullscreen ? 'Exit fullscreen' : 'Fullscreen editor'"
+        @click="toggleFullscreen"
+      >
+        <svg v-if="!isFullscreen" viewBox="0 0 16 16" width="14" height="14" fill="currentColor">
+          <path d="M1 1h5v1.5H2.5V5H1V1zm9 0h5v4h-1.5V2.5H10V1zM1 10h1.5v2.5H5V14H1v-4zm13.5 2.5H13V14h4v-4h-1.5v2.5z"/>
+        </svg>
+        <svg v-else viewBox="0 0 16 16" width="14" height="14" fill="currentColor">
+          <path d="M5.5 0H7v5H2V3.5h3.5V0zm4 0H11v3.5H14V5h-4.5V0zM0 9h5v5H3.5v-3.5H0V9zm10.5 3.5V9H16v1.5h-3.5V14H11v-1.5z"/>
+        </svg>
+      </button>
     </div>
 
     <textarea
@@ -88,10 +115,35 @@ function parseMarkdown(raw: string): string {
   border-radius: var(--radius-sm);
   overflow: hidden;
 
+  &--fullscreen {
+    position: fixed;
+    inset: 0;
+    z-index: 300;
+    border-radius: 0;
+    border: none;
+    display: flex;
+    flex-direction: column;
+    background: var(--color-surface);
+
+    .markdown-editor__textarea {
+      flex: 1;
+      min-height: 0;
+      resize: none;
+      font-size: var(--font-size-md);
+    }
+
+    .markdown-editor__preview {
+      flex: 1;
+      overflow-y: auto;
+      min-height: 0;
+    }
+  }
+
   &__tabs {
     display: flex;
     border-bottom: 1px solid var(--color-border);
     background: var(--color-surface);
+    flex-shrink: 0;
   }
 
   &__tab {
@@ -112,6 +164,21 @@ function parseMarkdown(raw: string): string {
     &:hover:not(.markdown-editor__tab--active) {
       color: var(--color-text);
     }
+  }
+
+  &__fullscreen-btn {
+    margin-left: auto;
+    padding: var(--spacing-xs) var(--spacing-sm);
+    background: transparent;
+    border: none;
+    color: var(--color-text-muted);
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    border-radius: var(--radius-sm);
+    transition: color var(--transition);
+
+    &:hover { color: var(--color-text); }
   }
 
   &__textarea {
