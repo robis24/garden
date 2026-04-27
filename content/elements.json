@@ -325,5 +325,14 @@
     "size": "l",
     "x": 1400,
     "y": -6385
+  },
+  {
+    "id": "11223344-5566-4788-99aa-bbccddeeff00",
+    "title": "witte sering",
+    "category": "perennial",
+    "shape": "circle",
+    "size": "l",
+    "x": 2500,
+    "y": -6030
   }
 ]
