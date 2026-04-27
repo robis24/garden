@@ -3,27 +3,42 @@ export default defineEventHandler((event) => {
   const protocol = process.env.NODE_ENV === 'development' ? 'http' : 'https'
   const serverUrl = host ? `${protocol}://${host}` : 'https://garden-nine-tawny.vercel.app'
 
+  const gardenElementSchema = {
+    type: "object",
+    required: ["id", "title", "category", "shape", "size", "x", "y"],
+    properties: {
+      id: { type: "string" },
+      title: { type: "string" },
+      category: { type: "string", enum: ["perennial", "biennial", "other"] },
+      shape: { type: "string", enum: ["circle", "rect", "diamond"] },
+      size: { type: "string", enum: ["xs", "s", "m", "l", "xl"] },
+      x: { type: "number" },
+      y: { type: "number" },
+      createdAt: { type: "number" }
+    }
+  }
+
   return {
     openapi: "3.0.0",
     info: {
       title: "Permaculture Garden API",
-      version: "1.0.0",
-      description: "API voor het beheren van de tuinplattegrond."
+      version: "1.1.0",
+      description: "API voor het beheren van planten op een tuinplattegrond."
     },
     servers: [{ url: serverUrl }],
     paths: {
       "/api/garden/elements": {
         get: {
-          summary: "Haal alle elementen op",
+          summary: "Lijst alle planten op",
           operationId: "getElements",
           responses: {
             "200": {
-              description: "Lijst van elementen",
+              description: "Een lijst van alle elementen",
               content: {
                 "application/json": {
                   schema: {
                     type: "array",
-                    items: { $ref: "#/components/schemas/GardenElement" }
+                    items: gardenElementSchema
                   }
                 }
               }
@@ -31,7 +46,7 @@ export default defineEventHandler((event) => {
           }
         },
         post: {
-          summary: "Update elementen",
+          summary: "Update de volledige kaart",
           operationId: "updateElements",
           requestBody: {
             required: true,
@@ -39,29 +54,50 @@ export default defineEventHandler((event) => {
               "application/json": {
                 schema: {
                   type: "object",
+                  required: ["elements"],
                   properties: {
                     elements: {
                       type: "array",
-                      items: { $ref: "#/components/schemas/GardenElement" }
+                      items: gardenElementSchema
                     }
-                  },
-                  required: ["elements"]
+                  }
                 }
               }
             }
           },
-          responses: { "200": { description: "OK" } }
+          responses: {
+            "200": {
+              description: "Succesvol bijgewerkt",
+              content: {
+                "application/json": {
+                  schema: {
+                    type: "object",
+                    properties: { success: { type: "boolean" } }
+                  }
+                }
+              }
+            }
+          }
         }
       },
       "/api/garden/markdown/{id}": {
         get: {
-          summary: "Haal beschrijving op",
+          summary: "Haal plantdetails op",
           operationId: "getDescription",
           parameters: [{ name: "id", in: "path", required: true, schema: { type: "string" } }],
-          responses: { "200": { description: "De markdown tekst" } }
+          responses: {
+            "200": {
+              description: "Markdown tekst",
+              content: {
+                "text/plain": {
+                  schema: { type: "string" }
+                }
+              }
+            }
+          }
         },
         post: {
-          summary: "Update beschrijving",
+          summary: "Update plantdetails",
           operationId: "updateDescription",
           parameters: [{ name: "id", in: "path", required: true, schema: { type: "string" } }],
           requestBody: {
@@ -71,32 +107,30 @@ export default defineEventHandler((event) => {
                 schema: {
                   type: "object",
                   required: ["markdown"],
-                  properties: { markdown: { type: "string" } }
+                  properties: {
+                    markdown: { type: "string" }
+                  }
                 }
               }
             }
           },
-          responses: { "200": { description: "OK" } }
+          responses: {
+            "200": {
+              description: "Succesvol bijgewerkt",
+              content: {
+                "application/json": {
+                  schema: {
+                    type: "object",
+                    properties: { success: { type: "boolean" } }
+                  }
+                }
+              }
+            }
+          }
         }
       }
     },
     components: {
-      schemas: {
-        GardenElement: {
-          type: "object",
-          required: ["id", "title", "category", "shape", "size", "x", "y"],
-          properties: {
-            id: { type: "string" },
-            title: { type: "string" },
-            category: { type: "string", enum: ["perennial", "biennial", "other"] },
-            shape: { type: "string", enum: ["circle", "rect", "diamond"] },
-            size: { type: "string", enum: ["xs", "s", "m", "l", "xl"] },
-            x: { type: "number" },
-            y: { type: "number" },
-            createdAt: { type: "number" }
-          }
-        }
-      },
       securitySchemes: {
         ApiKeyAuth: {
           type: "apiKey",
