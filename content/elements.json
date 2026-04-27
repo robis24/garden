@@ -316,5 +316,14 @@
     "size": "l",
     "x": 1725,
     "y": -6405
+  },
+  {
+    "id": "ccddeeff-0011-4222-8333-445566778899",
+    "title": "taxus",
+    "category": "perennial",
+    "shape": "circle",
+    "size": "l",
+    "x": 1400,
+    "y": -6385
   }
 ]
