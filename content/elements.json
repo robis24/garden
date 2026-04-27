@@ -388,5 +388,14 @@
     "size": "m",
     "x": 3120,
     "y": -5520
+  },
+  {
+    "id": "8899aabb-ccdd-4eef-9012-334455667788",
+    "title": "zevenblad",
+    "category": "perennial",
+    "shape": "rect",
+    "size": "l",
+    "x": 1185,
+    "y": -5980
   }
 ]
