@@ -352,5 +352,14 @@
     "size": "l",
     "x": 2050,
     "y": -5900
+  },
+  {
+    "id": "22334455-6677-4888-99aa-bbccddeeff11",
+    "title": "weigela",
+    "category": "perennial",
+    "shape": "circle",
+    "size": "l",
+    "x": 1850,
+    "y": -5750
   }
 ]
