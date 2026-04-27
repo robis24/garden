@@ -19,7 +19,7 @@ export default defineEventHandler((event) => {
   }
 
   return {
-    openapi: "3.0.0",
+    openapi: "3.1.0",
     info: {
       title: "Permaculture Garden API",
       version: "1.1.0",
@@ -131,6 +131,7 @@ export default defineEventHandler((event) => {
       }
     },
     components: {
+      schemas: {},
       securitySchemes: {
         ApiKeyAuth: {
           type: "apiKey",
