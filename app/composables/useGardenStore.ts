@@ -50,7 +50,7 @@ export function useGardenStore(): GardenStore {
   async function sync() {
     await $fetch('/api/garden/elements', {
       method: 'POST',
-      body: Object.values(elements.value)
+      body: { elements: Object.values(elements.value) }
     })
   }
 

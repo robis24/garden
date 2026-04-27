@@ -2,26 +2,28 @@ export default defineEventHandler(async (event) => {
   const config = useRuntimeConfig()
   const apiKey = getHeader(event, 'x-garden-key')
 
-  // Alleen API key checken als deze is ingesteld
   if (config.GARDEN_API_KEY && apiKey !== config.GARDEN_API_KEY) {
     throw createError({ statusCode: 401, statusMessage: 'Unauthorized' })
   }
 
   const body = await readBody(event)
   
-  // Opslaan naar GitHub
+  // Accept both direct array or { elements: [...] } object
+  const elements = Array.isArray(body) ? body : body.elements
+
+  if (!Array.isArray(elements)) {
+    throw createError({ statusCode: 400, statusMessage: 'Invalid input: expected array of elements' })
+  }
+  
   await setGithubFile(
     'content/elements.json', 
-    JSON.stringify(body, null, 2), 
+    JSON.stringify(elements, null, 2), 
     'Update garden elements via AI/API'
   )
 
-  // Ook lokaal updaten in de Nitro cache voor snelle feedback (indien mogelijk)
   try {
-    await useStorage('data').setItem('elements.json', body)
-  } catch (e) {
-    // In serverless omgevingen kan dit falen, dat is ok
-  }
+    await useStorage('data').setItem('elements.json', elements)
+  } catch (e) {}
 
   return { success: true }
 })
