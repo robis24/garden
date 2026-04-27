@@ -34,7 +34,6 @@ export function useGardenStore(): GardenStore {
   const loading = useState('garden:loading', () => true)
   const initialLoad = useState('garden:initialLoad', () => false)
 
-  // Initial load from server
   if (import.meta.client && !initialLoad.value) {
     initialLoad.value = true
     $fetch<GardenElement[]>('/api/garden/elements').then(data => {
@@ -47,35 +46,36 @@ export function useGardenStore(): GardenStore {
     })
   }
 
-  async function sync() {
-    await $fetch('/api/garden/elements', {
-      method: 'POST',
-      body: { elements: Object.values(elements.value) }
-    })
-  }
-
   async function addElement(data: Omit<GardenElement, 'id' | 'createdAt'>): Promise<string> {
     const id = crypto.randomUUID()
     const newEl = { ...data, id, createdAt: Date.now() }
+    // Optimistic update
     elements.value = { ...elements.value, [id]: newEl }
-    await sync()
+    
+    await $fetch('/api/garden/elements', {
+      method: 'POST',
+      body: newEl
+    })
     return id
   }
 
   async function updateElement(id: string, data: Partial<Omit<GardenElement, 'id' | 'createdAt'>>) {
     if (!elements.value[id]) return
-    elements.value = {
-      ...elements.value,
-      [id]: { ...elements.value[id], ...data }
-    }
-    await sync()
+    const updated = { ...elements.value[id], ...data }
+    elements.value = { ...elements.value, [id]: updated }
+    
+    await $fetch(`/api/garden/elements/${id}`, {
+      method: 'PATCH',
+      body: data
+    })
   }
 
   async function removeElement(id: string) {
     const { [id]: _, ...rest } = elements.value
     elements.value = rest
+    
     await Promise.all([
-      sync(),
+      $fetch(`/api/garden/elements/${id}`, { method: 'DELETE' }),
       $fetch(`/api/garden/markdown/${id}`, { method: 'POST', body: { markdown: '' } })
     ])
   }

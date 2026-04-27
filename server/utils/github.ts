@@ -1,4 +1,14 @@
-export async function getGithubFile(path: string) {
+interface GithubApiFile {
+  content: string  // base64-encoded
+  sha: string
+}
+
+export interface GithubFileResult {
+  content: string  // decoded UTF-8
+  sha: string
+}
+
+export async function getGithubFile(path: string): Promise<GithubFileResult | null> {
   const config = useRuntimeConfig()
   const { GITHUB_TOKEN, GITHUB_OWNER, GITHUB_REPO, GITHUB_BRANCH } = config
 
@@ -8,17 +18,20 @@ export async function getGithubFile(path: string) {
   }
 
   try {
-    const response = await $fetch<any>(`https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${path}?ref=${GITHUB_BRANCH}`, {
-      headers: {
-        Authorization: `Bearer ${GITHUB_TOKEN}`,
-        Accept: 'application/vnd.github.v3+json',
-        'User-Agent': 'Nuxt-Garden-App'
+    const response = await $fetch<GithubApiFile>(
+      `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${path}?ref=${GITHUB_BRANCH}`,
+      {
+        headers: {
+          Authorization: `Bearer ${GITHUB_TOKEN}`,
+          Accept: 'application/vnd.github.v3+json',
+          'User-Agent': 'Nuxt-Garden-App',
+        },
       }
-    })
-    
+    )
+
     return {
       content: Buffer.from(response.content, 'base64').toString('utf-8'),
-      sha: response.sha
+      sha: response.sha,
     }
   } catch (e: any) {
     if (e.status === 404) {
