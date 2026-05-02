@@ -397,5 +397,14 @@
     "size": "l",
     "x": 1185,
     "y": -5980
+  },
+  {
+    "id": "99aa88bb-7766-4455-ccdd-223344556677",
+    "title": "kaapse knoflook",
+    "category": "perennial",
+    "shape": "circle",
+    "size": "s",
+    "x": 3000,
+    "y": -5550
   }
 ]
